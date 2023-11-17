@@ -6,10 +6,10 @@ import (
 	"strings"
 )
 
-func Calculate(input string) (int, error) {
+func Calculate(input string) (string, error) {
 	parts := strings.Fields(input)
 	if len(parts) != 3 {
-		return 0, fmt.Errorf("Неверный формат ввода")
+		return "", fmt.Errorf("Неверный формат ввода")
 	}
 
 	operand1 := parts[0]
@@ -20,13 +20,17 @@ func Calculate(input string) (int, error) {
 	isRoman := isRomanNumber(operand1) && isRomanNumber(operand2)
 
 	if isArabic && isRoman {
-		return 0, fmt.Errorf("Используются разные системы исчисления")
+		return "", fmt.Errorf("Используются одновременно разные системы счисления")
 	}
 
 	var result int
-
+	var isRomanInput bool
 	if isArabic {
 		num1, num2 := toArabic(operand1), toArabic(operand2)
+		if num1 < 1 || num1 > 10 || num2 < 1 || num2 > 10 {
+			return "", fmt.Errorf("Числа должны быть от 1 до 10 включительно")
+		}
+
 		switch operator {
 		case "+":
 			result = num1 + num2
@@ -36,39 +40,51 @@ func Calculate(input string) (int, error) {
 			result = num1 * num2
 		case "/":
 			if num2 == 0 {
-				return 0, fmt.Errorf("Деление на ноль")
+				return "", fmt.Errorf("Деление на ноль")
 			}
 			result = num1 / num2
 		default:
-			return 0, fmt.Errorf("Неподдерживаемая операция" + operator)
+			return "", fmt.Errorf("Неподдерживаемая операция: " + operator)
 		}
 	} else if isRoman {
 		num1, num2 := romanToArabic(operand1), romanToArabic(operand2)
-		if num1 <= 0 || num2 <= 0 {
-			return 0, fmt.Errorf("Римские числа могут быть только положительными")
+		if num1 <= 0 || num1 > 10 || num2 <= 0 || num2 > 10 {
+			return "", fmt.Errorf("Римские числа должны быть от I до X включительно")
 		}
-		if num1 < num2 {
-			return 0, fmt.Errorf("Римские числа не поддерживают отрицательные значения")
-		}
+
 		switch operator {
 		case "+":
 			result = num1 + num2
 		case "-":
 			result = num1 - num2
+			if result <= 0 {
+				return "", fmt.Errorf("Римские числа не поддерживают отрицательные значения")
+			}
 		case "*":
 			result = num1 * num2
 		case "/":
 			if num2 == 0 {
-				return 0, fmt.Errorf("Деление на ноль")
+				return "", fmt.Errorf("Деление на ноль")
 			}
 			result = num1 / num2
 		default:
-			return 0, fmt.Errorf("Неподдерживаемая операция" + operator)
+			return "", fmt.Errorf("Неподдерживаемая операция: " + operator)
 		}
+
+		isRomanInput = true
 	} else {
-		return 0, fmt.Errorf("Операнды не являются числами")
+		return "", fmt.Errorf("Операнды не являются числами")
 	}
-	return result, nil
+
+	if isRomanInput {
+		romanResult, err := toRoman(result)
+		if err != nil {
+			return "", err
+		}
+		return romanResult, nil
+	}
+
+	return strconv.Itoa(result), nil
 }
 
 func isArabicNumber(s string) bool {
@@ -105,4 +121,30 @@ func romanToArabic(roman string) int {
 		return 0
 	}
 	return result
+}
+
+func toRoman(num int) (string, error) {
+	if num <= 0 || num > 10 {
+		return "", fmt.Errorf("Число должно быть от 1 до 10 включительно")
+	}
+
+	romanNumerals := map[int]string{
+		1:  "I",
+		2:  "II",
+		3:  "III",
+		4:  "IV",
+		5:  "V",
+		6:  "VI",
+		7:  "VII",
+		8:  "VIII",
+		9:  "IX",
+		10: "X",
+	}
+
+	roman, exists := romanNumerals[num]
+	if !exists {
+		return "", fmt.Errorf("Не удалось преобразовать число в римское")
+	}
+
+	return roman, nil
 }
