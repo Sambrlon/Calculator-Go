@@ -124,8 +124,8 @@ func romanToArabic(roman string) int {
 }
 
 func toRoman(num int) (string, error) {
-	if num <= 0 || num > 10 {
-		return "", fmt.Errorf("Число должно быть от 1 до 10 включительно")
+	if num <= 0 {
+		return "", fmt.Errorf("Число должно быть положительным")
 	}
 
 	romanNumerals := map[int]string{
@@ -141,10 +141,36 @@ func toRoman(num int) (string, error) {
 		10: "X",
 	}
 
-	roman, exists := romanNumerals[num]
-	if !exists {
-		return "", fmt.Errorf("Не удалось преобразовать число в римское")
+	if roman, exists := romanNumerals[num]; exists {
+		return roman, nil
 	}
 
-	return roman, nil
+	standardRomanNumerals := []struct {
+		Value int
+		Roman string
+	}{
+		{1000, "M"},
+		{900, "CM"},
+		{500, "D"},
+		{400, "CD"},
+		{100, "C"},
+		{90, "XC"},
+		{50, "L"},
+		{40, "XL"},
+		{10, "X"},
+		{9, "IX"},
+		{5, "V"},
+		{4, "IV"},
+		{1, "I"},
+	}
+
+	result := ""
+	for _, pair := range standardRomanNumerals {
+		for num >= pair.Value {
+			result += pair.Roman
+			num -= pair.Value
+		}
+	}
+
+	return result, nil
 }
